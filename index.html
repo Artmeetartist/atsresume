@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Friendly Resume Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .resume-template {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .resume-template:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .template-selector-label {
+            transition: all 0.2s ease-in-out;
+            border-width: 2px;
+            border-color: transparent;
+            position: relative;
+        }
+        .template-selector-label.premium-locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 50%;
+            padding: 2px;
+            font-size: 12px;
+        }
+         .template-selector-label.premium-locked > img {
+            filter: grayscale(80%);
+         }
+
+        input:checked + .template-selector-label {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+        }
+        #resume-preview h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+         #resume-preview h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .drag-handle {
+            cursor: move;
+        }
+        .form-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            background-color: white;
+        }
+        .form-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .sub-section-item {
+            border: 1px solid #f3f4f6;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <h1 class="text-2xl sm:text-3xl font-bold text-indigo-600" data-translate="title">ATS Resume Builder</h1>
+                <div class="flex items-center gap-4">
+                     <select id="language-selector" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                        <option value="en" selected>English</option>
+                        <option value="pl">Polski</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        
+                    </select>
+                    <button id="download-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 sm:px-6 rounded-lg hover:bg-indigo-700 transition duration-300" data-translate="download_pdf">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Input Form -->
+            <div class="lg:col-span-5 bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-center" data-translate="your_details">Your Details</h2>
+
+                <!-- Premium Toggle -->
+                <div class="flex items-center justify-center mb-6 bg-gray-100 p-3 rounded-lg">
+                    <label for="premium-toggle" class="mr-3 font-semibold text-gray-700" data-translate="free">Free</label>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="premium-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label for="premium-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                    <label for="premium-toggle" class="font-semibold text-indigo-600" data-translate="premium">Premium ✨</label>
+                    <style>.toggle-checkbox:checked { right: 0; border-color: #4f46e5; } .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }</style>
+                </div>
+                
+                <!-- Template Selector -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-3" data-translate="choose_template">Choose a Template</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-6">
+                        <div><input type="radio" name="template" id="template1" value="1" class="hidden" checked><label for="template1" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Classic" class="w-full h-auto rounded-md mx-auto" alt="Classic Template"><span class="text-sm font-medium mt-2 block">Classic</span></label></div>
+                        <div><input type="radio" name="template" id="template2" value="2" class="hidden"><label for="template2" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Modern" class="w-full h-auto rounded-md mx-auto" alt="Modern Template"><span class="text-sm font-medium mt-2 block">Modern</span></label></div>
+                        <div><input type="radio" name="template" id="template3" value="3" class="hidden"><label for="template3" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Compact" class="w-full h-auto rounded-md mx-auto" alt="Compact Template"><span class="text-sm font-medium mt-2 block">Compact</span></label></div>
+                        <div><input type="radio" name="template" id="template4" value="4" class="hidden" data-premium="true"><label for="template4" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Creative" class="w-full h-auto rounded-md mx-auto" alt="Creative Template"><span class="text-sm font-medium mt-2 block">Creative</span></label></div>
+                        <div><input type="radio" name="template" id="template5" value="5" class="hidden" data-premium="true"><label for="template5" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Professional" class="w-full h-auto rounded-md mx-auto" alt="Professional Template"><span class="text-sm font-medium mt-2 block">Professional</span></label></div>
+                        <div><input type="radio" name="template" id="template6" value="6" class="hidden" data-premium="true"><label for="template6" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Technical" class="w-full h-auto rounded-md mx-auto" alt="Technical Template"><span class="text-sm font-medium mt-2 block">Technical</span></label></div>
+                        <div><input type="radio" name="template" id="template7" value="7" class="hidden" data-premium="true"><label for="template7" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Executive" class="w-full h-auto rounded-md mx-auto" alt="Executive Template"><span class="text-sm font-medium mt-2 block">Executive</span></label></div>
+                        <div><input type="radio" name="template" id="template8" value="8" class="hidden" data-premium="true"><label for="template8" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Minimalist" class="w-full h-auto rounded-md mx-auto" alt="Minimalist Template"><span class="text-sm font-medium mt-2 block">Minimalist</span></label></div>
+                        <div><input type="radio" name="template" id="template9" value="9" class="hidden" data-premium="true"><label for="template9" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Data-Driven" class="w-full h-auto rounded-md mx-auto" alt="Data-Driven Template"><span class="text-sm font-medium mt-2 block">Data-Driven</span></label></div>
+                        <div><input type="radio" name="template" id="template10" value="10" class="hidden" data-premium="true"><label for="template10" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Academic" class="w-full h-auto rounded-md mx-auto" alt="Academic Template"><span class="text-sm font-medium mt-2 block">Academic</span></label></div>
+                        <div><input type="radio" name="template" id="template11" value="11" class="hidden" data-premium="true"><label for="template11" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Bold" class="w-full h-auto rounded-md mx-auto" alt="Bold Template"><span class="text-sm font-medium mt-2 block">Bold</span></label></div>
+                        <div><input type="radio" name="template" id="template12" value="12" class="hidden" data-premium="true"><label for="template12" class="template-selector-label cursor-pointer block bg-gray-200 rounded-lg p-2 text-center"><img src="https://placehold.co/100x140/e2e8f0/4a5568?text=Timeless" class="w-full h-auto rounded-md mx-auto" alt="Timeless Template"><span class="text-sm font-medium mt-2 block">Timeless</span></label></div>
+                    </div>
+                </div>
+
+                <div id="form-sections-container" class="space-y-4">
+                    <!-- Basic Info Section -->
+                    <div class="form-section" data-section-type="basic">
+                         <div class="form-section-header">
+                            <h3 class="text-lg font-semibold" data-translate="basic_info">Basic Information</h3>
+                         </div>
+                         <div class="space-y-4">
+                             <div><label for="name" class="block text-sm font-medium text-gray-700" data-translate="full_name">Full Name</label><input type="text" id="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="John Doe"></div>
+                             <div><label for="email" class="block text-sm font-medium text-gray-700" data-translate="email">Email</label><input type="email" id="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="john.doe@example.com"></div>
+                             <div><label for="phone" class="block text-sm font-medium text-gray-700" data-translate="phone">Phone</label><input type="tel" id="phone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="(123) 456-7890"></div>
+                             <div><label for="linkedin" class="block text-sm font-medium text-gray-700" data-translate="linkedin">LinkedIn</label><input type="text" id="linkedin" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="linkedin.com/in/johndoe"></div>
+                         </div>
+                    </div>
+                    <!-- Draggable sections will be populated here by JS -->
+                </div>
+                 <button id="add-section-btn" class="w-full mt-4 bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span data-translate="add_section">Add Custom Section</span>
+                </button>
+            </div>
+
+            <!-- Resume Preview -->
+            <div class="lg:col-span-7">
+                <div id="resume-preview" class="bg-white p-8 sm:p-12 rounded-xl shadow-lg resume-template">
+                    <!-- Content will be generated by JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+    <footer class="text-center py-6 bg-white mt-8">
+        <p class="text-gray-600" data-translate="footer">Build by Deepak @DeeCode for Magda with Love❤️ </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- ELEMENT SELECTIONS ---
+            const formSectionsContainer = document.getElementById('form-sections-container');
+            const downloadBtn = document.getElementById('download-btn');
+            const resumePreview = document.getElementById('resume-preview');
+            const premiumToggle = document.getElementById('premium-toggle');
+            const addSectionBtn = document.getElementById('add-section-btn');
+            const languageSelector = document.getElementById('language-selector');
+            
+            // --- TRANSLATIONS ---
+            const translations = {
+                en: {
+                    title: 'ATS Resume Builder', download_pdf: 'Download PDF', your_details: 'Your Details', free: 'Free',
+                    premium: 'Premium ✨', choose_template: 'Choose a Template', basic_info: 'Basic Information', full_name: 'Full Name',
+                    email: 'Email', phone: 'Phone', linkedin: 'LinkedIn', add_section: 'Add Custom Section', footer: 'Built with ❤️ by Gemini',
+                    summary_title: 'Professional Summary', experience_title: 'Work Experience', education_title: 'Education', skills_title: 'Skills',
+                    new_section_title: 'New Section', add_degree: '+ Add Degree', add_experience: '+ Add Experience', add_item: '+ Add Item'
+                },
+                es: {
+                    title: 'Creador de CV ATS', download_pdf: 'Descargar PDF', your_details: 'Tus Detalles', free: 'Gratis',
+                    premium: 'Premium ✨', choose_template: 'Elige una Plantilla', basic_info: 'Información Básica', full_name: 'Nombre Completo',
+                    email: 'Correo Electrónico', phone: 'Teléfono', linkedin: 'LinkedIn', add_section: 'Añadir Sección', footer: 'Creado con ❤️ por Gemini',
+                    summary_title: 'Resumen Profesional', experience_title: 'Experiencia Laboral', education_title: 'Educación', skills_title: 'Habilidades',
+                    new_section_title: 'Nueva Sección', add_degree: '+ Añadir Título', add_experience: '+ Añadir Experiencia', add_item: '+ Añadir Elemento'
+                },
+                fr: {
+                    title: 'Créateur de CV ATS', download_pdf: 'Télécharger PDF', your_details: 'Vos Coordonnées', free: 'Gratuit',
+                    premium: 'Premium ✨', choose_template: 'Choisissez un Modèle', basic_info: 'Informations de Base', full_name: 'Nom Complet',
+                    email: 'E-mail', phone: 'Téléphone', linkedin: 'LinkedIn', add_section: 'Ajouter une Section', footer: 'Créé avec ❤️ par Gemini',
+                    summary_title: 'Résumé Professionnel', experience_title: 'Expérience Professionnelle', education_title: 'Formation', skills_title: 'Compétences',
+                    new_section_title: 'Nouvelle Section', add_degree: '+ Ajouter un Diplôme', add_experience: '+ Ajouter une Expérience', add_item: '+ Ajouter un Élément'
+                },
+                de: {
+                    title: 'ATS Lebenslauf-Ersteller', download_pdf: 'PDF Herunterladen', your_details: 'Ihre Daten', free: 'Kostenlos',
+                    premium: 'Premium ✨', choose_template: 'Vorlage wählen', basic_info: 'Grundlegende Informationen', full_name: 'Vollständiger Name',
+                    email: 'E-Mail', phone: 'Telefon', linkedin: 'LinkedIn', add_section: 'Abschnitt hinzufügen', footer: 'Mit ❤️ von Gemini erstellt',
+                    summary_title: 'Berufliches Profil', experience_title: 'Berufserfahrung', education_title: 'Ausbildung', skills_title: 'Fähigkeiten',
+                    new_section_title: 'Neuer Abschnitt', add_degree: '+ Abschluss hinzufügen', add_experience: '+ Erfahrung hinzufügen', add_item: '+ Element hinzufügen'
+                },
+                pl: {
+                    title: 'Kreator CV przyjazny dla ATS', download_pdf: 'Pobierz PDF', your_details: 'Twoje Dane', free: 'Darmowy',
+                    premium: 'Premium ✨', choose_template: 'Wybierz Szablon', basic_info: 'Podstawowe Informacje', full_name: 'Imię i Nazwisko',
+                    email: 'Email', phone: 'Telefon', linkedin: 'LinkedIn', add_section: 'Dodaj nową sekcję', footer: 'Zbudowane z ❤️ przez Gemini',
+                    summary_title: 'Podsumowanie Zawodowe', experience_title: 'Doświadczenie Zawodowe', education_title: 'Edukacja', skills_title: 'Umiejętności',
+                    new_section_title: 'Nowa Sekcja', add_degree: '+ Dodaj Stopień Naukowy', add_experience: '+ Dodaj Doświadczenie', add_item: '+ Dodaj Element'
+                }
+            };
+            let currentLang = 'en';
+
+            // --- INITIAL DATA & STATE ---
+            const getSampleData = (lang) => ({
+                name: 'Jane Doe',
+                email: 'jane.doe@email.com',
+                phone: '123-456-7890',
+                linkedin: 'linkedin.com/in/janedoe',
+                sections: [
+                    {
+                        type: 'summary',
+                        title: translations[lang].summary_title,
+                        content: 'Results-driven software engineer with 5+ years of experience in developing, testing, and maintaining web applications. Proficient in JavaScript, React, and Node.js. Seeking to leverage my skills to build innovative solutions.'
+                    },
+                    {
+                        type: 'experience',
+                        title: translations[lang].experience_title,
+                        items: [
+                            { 
+                                primary: 'Senior Software Engineer, Tech Solutions Inc.', 
+                                secondary: '2020-Present', 
+                                details: '- Led a team of 4 developers in creating a new e-commerce platform.\n- Improved application performance by 25% through code optimization.\n- Mentored junior engineers and conducted code reviews.' 
+                            },
+                            { 
+                                primary: 'Software Engineer, Web Innovators', 
+                                secondary: '2018-2020', 
+                                details: '- Developed and maintained client-side features using React.\n- Collaborated with designers to create user-friendly interfaces.' 
+                            }
+                        ]
+                    },
+                    {
+                        type: 'education',
+                        title: translations[lang].education_title,
+                        items: [
+                            { primary: 'B.S. in Computer Science', secondary: 'State University, 2014-2018', details: '' }
+                        ]
+                    },
+                    {
+                        type: 'skills',
+                        title: translations[lang].skills_title,
+                        content: 'JavaScript, React, Node.js, HTML, CSS, Python, SQL, Git'
+                    }
+                ]
+            });
+
+            // --- TEMPLATE GENERATION FUNCTIONS ---
+            const createSectionHTML = (section) => {
+                const sectionId = `section-${Date.now()}-${Math.random()}`;
+                let contentHTML = '';
+                let addButtonText = '';
+                switch(section.type) {
+                    case 'summary':
+                    case 'skills':
+                        contentHTML = `<textarea class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 section-content" rows="5">${section.content || ''}</textarea>`;
+                        break;
+                    case 'experience':
+                        addButtonText = translations[currentLang].add_experience;
+                        contentHTML = `<div class="sub-sections-container space-y-3"></div><button class="add-subsection-btn mt-3 text-sm bg-indigo-100 text-indigo-700 font-semibold py-1 px-3 rounded-md hover:bg-indigo-200">${addButtonText}</button>`;
+                        break;
+                    case 'education':
+                         addButtonText = translations[currentLang].add_degree;
+                        contentHTML = `<div class="sub-sections-container space-y-3"></div><button class="add-subsection-btn mt-3 text-sm bg-indigo-100 text-indigo-700 font-semibold py-1 px-3 rounded-md hover:bg-indigo-200">${addButtonText}</button>`;
+                        break;
+                    case 'custom':
+                        addButtonText = translations[currentLang].add_item;
+                        contentHTML = `<div class="sub-sections-container space-y-3"></div><button class="add-subsection-btn mt-3 text-sm bg-indigo-100 text-indigo-700 font-semibold py-1 px-3 rounded-md hover:bg-indigo-200">${addButtonText}</button>`;
+                        break;
+                }
+
+                return `
+                    <div class="form-section" data-section-type="${section.type}" id="${sectionId}">
+                        <div class="form-section-header">
+                            <div class="flex items-center gap-2">
+                                <span class="drag-handle text-gray-400 hover:text-gray-600">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path></svg>
+                                </span>
+                                <input type="text" class="text-lg font-semibold bg-transparent section-title w-full" value="${section.title}">
+                            </div>
+                            <button class="remove-section-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+                        </div>
+                        ${contentHTML}
+                    </div>`;
+            };
+            
+            const createSubSectionHTML = (item = { primary: '', secondary: '', details: '' }) => {
+                return `
+                    <div class="sub-section-item">
+                         <button class="remove-subsection-btn float-right text-red-400 hover:text-red-600 font-semibold">&times;</button>
+                         <input type="text" placeholder="Title / Role / Degree" class="block w-full border-gray-300 rounded-md shadow-sm p-2 text-sm subsection-primary" value="${item.primary}">
+                         <input type="text" placeholder="Company / School / Date" class="mt-2 block w-full border-gray-300 rounded-md shadow-sm p-2 text-sm subsection-secondary" value="${item.secondary}">
+                         <textarea placeholder="Details / Responsibilities (one per line)" rows="3" class="mt-2 block w-full border-gray-300 rounded-md shadow-sm p-2 text-sm subsection-details">${item.details}</textarea>
+                    </div>`;
+            };
+
+            // --- CORE LOGIC FUNCTIONS ---
+
+            function populateForm() {
+                // Clear existing sections before populating
+                formSectionsContainer.querySelectorAll('.form-section:not([data-section-type="basic"])').forEach(el => el.remove());
+
+                // Basic Info
+                document.getElementById('name').value = getSampleData(currentLang).name;
+                document.getElementById('email').value = getSampleData(currentLang).email;
+                document.getElementById('phone').value = getSampleData(currentLang).phone;
+                document.getElementById('linkedin').value = getSampleData(currentLang).linkedin;
+                
+                // Draggable Sections
+                getSampleData(currentLang).sections.forEach(sectionData => {
+                    const sectionEl = document.createElement('div');
+                    sectionEl.innerHTML = createSectionHTML(sectionData);
+                    const newSection = sectionEl.firstElementChild;
+                    formSectionsContainer.appendChild(newSection);
+
+                    if (sectionData.items) {
+                        const subContainer = newSection.querySelector('.sub-sections-container');
+                        sectionData.items.forEach(itemData => {
+                            const subSectionEl = document.createElement('div');
+                            subSectionEl.innerHTML = createSubSectionHTML(itemData);
+                            subContainer.appendChild(subSectionEl.firstElementChild);
+                        });
+                    }
+                });
+            }
+
+            function renderResume() {
+                const basicInfo = { name: document.getElementById('name').value, email: document.getElementById('email').value, phone: document.getElementById('phone').value, linkedin: document.getElementById('linkedin').value };
+                const sectionElements = formSectionsContainer.querySelectorAll('.form-section:not([data-section-type="basic"])');
+                const sectionsData = Array.from(sectionElements).map(sectionEl => {
+                    const type = sectionEl.dataset.sectionType;
+                    const title = sectionEl.querySelector('.section-title')?.value;
+                    let content, items;
+                    if (type === 'summary' || type === 'skills') { content = sectionEl.querySelector('.section-content').value; } 
+                    else { items = Array.from(sectionEl.querySelectorAll('.sub-section-item')).map(subEl => ({ primary: subEl.querySelector('.subsection-primary').value, secondary: subEl.querySelector('.subsection-secondary').value, details: subEl.querySelector('.subsection-details').value }));}
+                    return { type, title, content, items };
+                });
+                const selectedTemplate = document.querySelector('input[name="template"]:checked').value;
+                resumePreview.innerHTML = generatePreviewHTML(basicInfo, sectionsData, selectedTemplate);
+            }
+
+            function generatePreviewHTML(basic, sections, templateId) {
+                let headerHTML = '', bodyHTML = '', mainCol = '', sideCol = '';
+                const renderSection = (section) => {
+                    let sectionHTML = `<div><h2>${section.title.toUpperCase()}</h2>`;
+                    if (section.type === 'summary') { sectionHTML += `<p>${section.content}</p>`; } 
+                    else if (section.type === 'skills') {
+                        const skills = section.content.split(',').map(s => s.trim());
+                        if (templateId === '2') { sectionHTML += `<div class="flex flex-wrap gap-2 mt-2">${skills.map(skill => `<span class="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">${skill}</span>`).join('')}</div>`; }
+                        else if (templateId === '5' || templateId === '6') { sectionHTML += `<ul class="space-y-1">${skills.map(skill => `<li class="flex items-center"><svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${skill}</li>`).join('')}</ul>`; }
+                        else { sectionHTML += `<p>${skills.join(', ')}</p>`; }
+                    } else {
+                        section.items.forEach(item => {
+                            if(item.primary) {
+                                sectionHTML += `<div class="mb-3"><h3>${item.primary} <span class="font-normal text-gray-600 text-base">${item.secondary}</span></h3>`;
+                                if(item.details) { sectionHTML += `<ul class="list-disc list-inside mt-1 text-gray-700">${item.details.split('\n').map(d => `<li>${d.replace(/^-/, '').trim()}</li>`).join('')}</ul>`; }
+                                sectionHTML += `</div>`;
+                            }
+                        });
+                    }
+                    sectionHTML += `</div>`;
+                    return sectionHTML;
+                }
+                sections.forEach(section => { if ((section.content || (section.items && section.items.length > 0)) && section.title) { bodyHTML += renderSection(section); } });
+                switch(templateId) {
+                    case '1': headerHTML = `<div class="text-center mb-8"><h1 class="text-4xl font-bold">${basic.name}</h1><p class="text-md mt-2">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    case '2': headerHTML = `<div class="flex justify-between items-center pb-4 border-b-2 border-gray-300"><div><h1 class="text-4xl font-bold text-indigo-600">${basic.name}</h1></div><div class="text-right text-sm"><p>${basic.email}</p><p>${basic.phone}</p><p>${basic.linkedin}</p></div></div>`; return headerHTML + bodyHTML;
+                    case '3': headerHTML = `<h1 class="text-3xl font-bold text-center">${basic.name}</h1><p class="text-center text-sm mb-4">${basic.email} &bull; ${basic.phone} &bull; ${basic.linkedin}</p>`; sections.forEach(s => { (s.type === 'summary' || s.type === 'skills') ? sideCol += renderSection(s) : mainCol += renderSection(s); }); return `${headerHTML}<div class="grid grid-cols-3 gap-6">${mainCol ? `<div class="col-span-2">${mainCol}</div>` : ''}${sideCol ? `<div class="col-span-1">${sideCol}</div>` : ''}</div>`;
+                    case '4': headerHTML = `<div class="relative"><div class="absolute w-full h-24 bg-indigo-200 top-0 left-0 rounded-t-lg"></div><div class="relative text-center pt-8"><h1 class="text-4xl font-extrabold text-gray-800">${basic.name}</h1><p class="text-md mt-2 text-gray-600">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div></div>`; return headerHTML + bodyHTML;
+                    case '5': headerHTML = `<div class="border-b-4 border-indigo-600 pb-4 mb-6"><h1 class="text-4xl font-bold">${basic.name}</h1><p class="text-md mt-2">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; sections.forEach(s => { (s.type === 'experience' || s.type === 'custom') ? mainCol += renderSection(s) : sideCol += renderSection(s); }); return `${headerHTML}<div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="md:col-span-2">${mainCol}</div><div>${sideCol}</div></div>`;
+                    case '6': headerHTML = `<div class="bg-gray-800 text-white p-6 rounded-t-lg"><h1 class="text-4xl font-bold">${basic.name}</h1><p class="text-md mt-2 text-gray-300">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; sections.forEach(s => { (s.type === 'skills' || s.type === 'education') ? sideCol += renderSection(s) : mainCol += renderSection(s); }); return `${headerHTML}<div class="grid grid-cols-1 md:grid-cols-3 gap-8 p-6"><div class="md:col-span-2">${mainCol}</div><div>${sideCol}</div></div>`;
+                    case '7': headerHTML = `<div class="text-center p-4"><h1 class="text-5xl font-extralight tracking-wider">${basic.name}</h1><hr class="my-4 border-gray-300"><p class="text-md tracking-widest">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    case '8': headerHTML = `<div class="mb-8"><h1 class="text-5xl font-thin">${basic.name}</h1><p class="text-md mt-2 text-gray-500">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    case '9': headerHTML = `<div class="p-6 bg-indigo-700 text-white rounded-t-lg"><h1 class="text-4xl font-bold">${basic.name}</h1></div>`; sections.forEach(s => { (s.type === 'summary' || s.type === 'skills') ? sideCol += renderSection(s) : mainCol += renderSection(s); }); return `${headerHTML}<div class="flex"><div class="w-2/3 p-6">${mainCol}</div><div class="w-1/3 bg-gray-100 p-6 rounded-br-lg">${sideCol}</div></div>`;
+                    case '10': headerHTML = `<div class="text-center border-b-2 pb-4 mb-6"><h1 class="text-4xl font-serif">${basic.name}</h1><p class="text-md mt-2">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    case '11': headerHTML = `<div class="border-l-8 border-indigo-600 pl-6 py-4 mb-8"><h1 class="text-5xl font-bold">${basic.name}</h1><p class="text-lg mt-2">${basic.email} | ${basic.phone} | ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    case '12': headerHTML = `<div class="text-center mb-8"><h1 class="text-4xl font-serif font-semibold">${basic.name}</h1><p class="text-sm mt-2 uppercase tracking-wider text-gray-600">${basic.email} &bull; ${basic.phone} &bull; ${basic.linkedin}</p></div>`; return headerHTML + bodyHTML;
+                    default: return "Template not found";
+                }
+            }
+            
+            function changeLanguage(lang) {
+                currentLang = lang;
+                document.querySelectorAll('[data-translate]').forEach(el => {
+                    const key = el.dataset.translate;
+                    if (translations[lang][key]) {
+                        el.textContent = translations[lang][key];
+                    }
+                });
+                // Update section titles in the form
+                document.querySelectorAll('.form-section:not([data-section-type="basic"])').forEach(sectionEl => {
+                    const type = sectionEl.dataset.sectionType;
+                    const titleKey = `${type}_title`;
+                    const titleInput = sectionEl.querySelector('.section-title');
+                    if (titleInput && translations[lang][titleKey]) {
+                        titleInput.value = translations[lang][titleKey];
+                    }
+                });
+                renderResume();
+            }
+
+            // --- EVENT HANDLERS ---
+            function handleFormChange(e) { clearTimeout(window.renderTimeout); window.renderTimeout = setTimeout(renderResume, 250); }
+            function handlePremiumToggle() {
+                const isPremium = premiumToggle.checked;
+                document.querySelectorAll('input[data-premium="true"]').forEach(radio => {
+                    radio.nextElementSibling.classList.toggle('premium-locked', !isPremium);
+                    radio.disabled = !isPremium;
+                    if (!isPremium && radio.checked) { document.getElementById('template1').checked = true; }
+                });
+                renderResume();
+            }
+            function addNewCustomSection() {
+                const sectionData = { type: 'custom', title: translations[currentLang].new_section_title, items: [] };
+                const sectionEl = document.createElement('div');
+                sectionEl.innerHTML = createSectionHTML(sectionData);
+                formSectionsContainer.appendChild(sectionEl.firstElementChild);
+                renderResume();
+            }
+            formSectionsContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('add-subsection-btn')) { const container = e.target.previousElementSibling; const subSectionEl = document.createElement('div'); subSectionEl.innerHTML = createSubSectionHTML(); container.appendChild(subSectionEl.firstElementChild); }
+                if (e.target.classList.contains('remove-subsection-btn')) { e.target.closest('.sub-section-item').remove(); renderResume(); }
+                if (e.target.classList.contains('remove-section-btn')) { e.target.closest('.form-section').remove(); renderResume(); }
+            });
+            
+            // --- INITIALIZATION ---
+            populateForm();
+            renderResume();
+            handlePremiumToggle();
+            changeLanguage(currentLang);
+
+            // Setup event listeners
+            document.querySelector('body').addEventListener('input', handleFormChange);
+            document.querySelectorAll('input[name="template"]').forEach(radio => radio.addEventListener('change', renderResume));
+            premiumToggle.addEventListener('change', handlePremiumToggle);
+            addSectionBtn.addEventListener('click', addNewCustomSection);
+            languageSelector.addEventListener('change', (e) => changeLanguage(e.target.value));
+            downloadBtn.addEventListener('click', () => {
+                const name = document.getElementById('name').value || 'resume';
+                const opt = { margin: 0.5, filename: `${name.replace(/\s+/g, '_').toLowerCase()}_resume.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+                html2pdf().from(resumePreview).set(opt).save();
+            });
+            new Sortable(formSectionsContainer, { animation: 150, handle: '.drag-handle', onEnd: renderResume });
+        });
+    </script>
+</body>
+</html>
